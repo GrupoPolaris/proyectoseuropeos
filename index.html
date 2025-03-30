@@ -6,47 +6,135 @@
     <title>Buscador de Proyectos Europeos</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f3f4f6; }
-        input, select, button { margin: 5px; padding: 8px; width: 200px; border-radius: 5px; border: 1px solid #ccc; }
-        button { background-color: #4CAF50; color: white; cursor: pointer; }
-        button:hover { background-color: #45a049; }
-        .proyecto { border: 1px solid #ddd; padding: 10px; margin-top: 10px; border-radius: 5px; background: #ffffff; }
-        .total-financiacion { font-size: 18px; font-weight: bold; margin-top: 10px; }
-        h1 { color: #333; font-size: 24px; }
+        /* Fondo suave y diseño más limpio */
+        body { 
+            font-family: 'Arial', sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background-color: #f4f7fa; 
+            color: #333; 
+        }
+
+        /* Fondo para el contenedor principal */
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        /* Encabezado */
+        h1 {
+            font-size: 28px;
+            color: #005e9e; /* Color azul UE */
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        /* Estilo de los campos de entrada */
+        input, select, button {
+            margin: 10px 0;
+            padding: 10px;
+            width: 250px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #005e9e; /* Azul UE */
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #003e74;
+        }
+
+        /* Estilo para los resultados */
+        .proyecto {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+
+        .proyecto b {
+            color: #005e9e;
+        }
+
+        /* Barra de gráficos */
+        canvas {
+            width: 100%;
+            max-width: 800px;
+            margin: 20px auto;
+        }
+
+        /* Estilo de la financiación total */
+        .total-financiacion {
+            font-size: 20px;
+            font-weight: bold;
+            color: #4CAF50;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        /* Fondo de página sutil */
+        .background {
+            background: url('https://upload.wikimedia.org/wikipedia/commons/7/70/Flag_of_Europe.svg') no-repeat center center fixed;
+            background-size: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
     </style>
 </head>
 <body>
-    <h1>Buscador de Proyectos Europeos</h1>
-    <input type="text" id="acronym" placeholder="Buscar por Acrónimo">
-    <input type="text" id="title" placeholder="Buscar por Título">
-    <input type="text" id="coordinators" placeholder="Buscar por Coordinadores">
-    <input type="text" id="topic" placeholder="Buscar por Tema">
+    <div class="background"></div> <!-- Fondo sutil de la bandera de la UE -->
     
-    <!-- Desplegable para Programa -->
-    <select id="programme">
-        <option value="">Selecciona un Programa</option>
-    </select>
+    <div class="container">
+        <h1>Buscador de Proyectos Europeos</h1>
 
-    <!-- Desplegable para Estado -->
-    <select id="status">
-        <option value="">Selecciona un Estado</option>
-        <option value="active">Activo</option>
-        <option value="completed">Completado</option>
-        <option value="pending">Pendiente</option>
-    </select>
+        <input type="text" id="acronym" placeholder="Buscar por Acrónimo">
+        <input type="text" id="title" placeholder="Buscar por Título">
+        <input type="text" id="coordinators" placeholder="Buscar por Coordinadores">
+        <input type="text" id="topic" placeholder="Buscar por Tema">
+        
+        <select id="programme">
+            <option value="">Selecciona un Programa</option>
+        </select>
+        
+        <select id="status">
+            <option value="">Selecciona un Estado</option>
+            <option value="active">Activo</option>
+            <option value="completed">Completado</option>
+            <option value="pending">Pendiente</option>
+        </select>
 
-    <input type="text" id="pillar" placeholder="Buscar por Pilar">
-    <input type="text" id="work_programme" placeholder="Buscar por Programa de Trabajo">
-    <input type="date" id="start_date">
-    <input type="date" id="end_date">
-    <input type="number" id="budget" placeholder="Presupuesto mínimo">
-    <input type="number" id="grant" placeholder="Subvención mínima">
-    <button onclick="filtrarProyectos()">Buscar</button>
-    
-    <canvas id="grafico"></canvas>
-    <div id="resultados"></div>
-    <p id="totalFinanciacion" class="total-financiacion"></p>
-    
+        <input type="text" id="pillar" placeholder="Buscar por Pilar">
+        <input type="text" id="work_programme" placeholder="Buscar por Programa de Trabajo">
+        <input type="date" id="start_date">
+        <input type="date" id="end_date">
+        <input type="number" id="budget" placeholder="Presupuesto mínimo">
+        <input type="number" id="grant" placeholder="Subvención mínima">
+        <button onclick="filtrarProyectos()">Buscar</button>
+        
+        <canvas id="grafico"></canvas>
+        <div id="resultados"></div>
+        <p id="totalFinanciacion" class="total-financiacion"></p>
+    </div>
+
     <script>
         let proyectos = [];
         let chart;
@@ -118,11 +206,9 @@
                                  Subvención: ${proyecto.financiacion}<br>
                                  <a href="${proyecto.link}" target="_blank">Más información</a><br>`;
                 contenedor.appendChild(div);
-                // Sumar la financiación total
                 totalFinanciacion += parseFloat(proyecto.financiacion.replace("€", "").replace(/\./g, ""));
             });
 
-            // Mostrar el total de financiación
             document.getElementById("totalFinanciacion").innerText = `Total financiación de proyectos filtrados: ${totalFinanciacion.toLocaleString()} €`;
         }
 
