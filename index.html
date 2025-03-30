@@ -7,23 +7,19 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
-        input, select, button { margin: 5px; padding: 8px; width: 250px; }
+        input, select, button { margin: 5px; padding: 8px; width: 200px; }
         .proyecto { border: 1px solid #ddd; padding: 10px; margin-top: 10px; border-radius: 5px; background: #f9f9f9; }
         .total-financiacion { font-size: 18px; font-weight: bold; margin-top: 10px; }
     </style>
 </head>
 <body>
     <h1>Buscador de Proyectos Europeos</h1>
+    
     <input type="text" id="titulo" placeholder="Buscar por título">
-    <input type="text" id="acronimo" placeholder="Buscar por acrónimo">
-    <input type="text" id="coordinador" placeholder="Buscar por coordinador">
-    <input type="text" id="topic" placeholder="Buscar por tema">
-    <select id="status">
-        <option value="">Todos los estados</option>
-        <option value="Ongoing">Ongoing</option>
-        <option value="Finalizado">Finalizado</option>
-    </select>
-    <input type="number" id="presupuesto" placeholder="Presupuesto mínimo">
+    <input type="text" id="universidad" placeholder="Buscar por universidad">
+    <input type="text" id="comunidad" placeholder="Buscar por Comunidad Autónoma">
+    <input type="text" id="programa" placeholder="Buscar por programa"> <!-- Nuevo filtro -->
+    <input type="number" id="financiacion" placeholder="Financiación mínima">
     <button onclick="filtrarProyectos()">Buscar</button>
     
     <canvas id="grafico"></canvas>
@@ -39,30 +35,32 @@
             .then(response => response.json())
             .then(data => {
                 proyectos = data;
-                actualizarGrafico(proyectos);
-            });
+                actualizarGrafico(proyectos);  // Actualizar la gráfica al cargar
+                mostrarResultados(proyectos);  // Mostrar todos los proyectos por defecto
+            })
+            .catch(error => console.error("Error cargando JSON:", error));
 
+        // Función para filtrar proyectos
         function filtrarProyectos() {
             let titulo = document.getElementById("titulo").value.toLowerCase();
-            let acronimo = document.getElementById("acronimo").value.toLowerCase();
-            let coordinador = document.getElementById("coordinador").value.toLowerCase();
-            let topic = document.getElementById("topic").value.toLowerCase();
-            let status = document.getElementById("status").value;
-            let presupuesto = document.getElementById("presupuesto").value;
+            let universidad = document.getElementById("universidad").value.toLowerCase();
+            let comunidad = document.getElementById("comunidad").value.toLowerCase();
+            let programa = document.getElementById("programa").value.toLowerCase(); // Nuevo filtro
+            let financiacion = document.getElementById("financiacion").value;
 
             let proyectosFiltrados = proyectos.filter(proyecto => 
-                (titulo === "" || proyecto.Title.toLowerCase().includes(titulo)) &&
-                (acronimo === "" || proyecto.Acronym.toLowerCase().includes(acronimo)) &&
-                (coordinador === "" || proyecto.Coordinators.toLowerCase().includes(coordinador)) &&
-                (topic === "" || proyecto.Topic.toLowerCase().includes(topic)) &&
-                (status === "" || proyecto.Status.toLowerCase() === status.toLowerCase()) &&
-                (presupuesto === "" || parseFloat(proyecto.Budget) >= parseFloat(presupuesto))
+                (titulo === "" || proyecto.nombre.toLowerCase().includes(titulo)) &&
+                (universidad === "" || proyecto.universidad.toLowerCase().includes(universidad)) &&
+                (comunidad === "" || proyecto.comunidad.toLowerCase().includes(comunidad)) &&
+                (programa === "" || proyecto.programa.toLowerCase().includes(programa)) &&  // Nuevo filtro
+                (financiacion === "" || parseFloat(proyecto.financiacion.replace("€", "").replace(/\./g, "")) >= parseFloat(financiacion))
             );
 
             mostrarResultados(proyectosFiltrados);
             actualizarGrafico(proyectosFiltrados);
         }
 
+        // Mostrar resultados filtrados
         function mostrarResultados(resultados) {
             let contenedor = document.getElementById("resultados");
             contenedor.innerHTML = "";
@@ -77,51 +75,40 @@
             resultados.forEach(proyecto => {
                 let div = document.createElement("div");
                 div.classList.add("proyecto");
-                div.innerHTML = `<b>${proyecto.Title}</b> (${proyecto.Acronym})<br>
-                                 Coordinador: ${proyecto.Coordinators}<br>
-                                 Tema: ${proyecto.Topic}<br>
-                                 Estado: ${proyecto.Status}<br>
-                                 Presupuesto: ${proyecto.Budget} €<br>
-                                 <a href="${proyecto.Links}" target="_blank">Más información</a><br>`;
+                div.innerHTML = `<b>${proyecto.nombre}</b> (${proyecto.universidad})<br>
+                                 Comunidad: ${proyecto.comunidad}<br>
+                                 Programa: ${proyecto.programa}<br>
+                                 Financiación: ${proyecto.financiacion}<br>
+                                 <a href="${proyecto.link}" target="_blank">Ver más</a>`;
                 contenedor.appendChild(div);
-                totalFinanciacion += parseFloat(proyecto.Budget);
+                totalFinanciacion += parseFloat(proyecto.financiacion.replace("€", "").replace(/\./g, ""));
             });
 
-            document.getElementById("totalFinanciacion").innerText = `Total financiación de proyectos filtrados: ${totalFinanciacion.toLocaleString()} €`;
+            document.getElementById("totalFinanciacion").innerText = `Total financiación: ${totalFinanciacion.toLocaleString()} €`;
         }
 
+        // Función para actualizar la gráfica
         function actualizarGrafico(proyectos) {
-            let coordinadores = {};
+            let universidades = {};
             proyectos.forEach(proyecto => {
-                let coord = proyecto.Coordinators;
-                let presupuesto = parseFloat(proyecto.Budget);
-                coordinadores[coord] = (coordinadores[coord] || 0) + presupuesto;
+                let uni = proyecto.universidad;
+                let financiacion = parseFloat(proyecto.financiacion.replace("€", "").replace(/\./g, ""));
+                universidades[uni] = (universidades[uni] || 0) + financiacion;
             });
 
-            let labels = Object.keys(coordinadores);
-            let data = Object.values(coordinadores);
+            let labels = Object.keys(universidades);
+            let data = Object.values(universidades);
 
-            if (chart) {
-                chart.destroy();
-            }
+            if (chart) chart.destroy();
 
             let ctx = document.getElementById("grafico").getContext("2d");
             chart = new Chart(ctx, {
                 type: "bar",
                 data: {
                     labels: labels,
-                    datasets: [{
-                        label: "Presupuesto por coordinador (€)",
-                        data: data,
-                        backgroundColor: "rgba(54, 162, 235, 0.5)",
-                        borderColor: "rgba(54, 162, 235, 1)",
-                        borderWidth: 1
-                    }]
+                    datasets: [{ label: "Financiación (€)", data: data, backgroundColor: "blue" }]
                 },
-                options: {
-                    responsive: true,
-                    scales: { y: { beginAtZero: true } }
-                }
+                options: { responsive: true }
             });
         }
     </script>
