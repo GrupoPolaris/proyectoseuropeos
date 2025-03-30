@@ -6,7 +6,7 @@
     <title>Buscador de Proyectos Europeos</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* Fondo suave y diseño más limpio */
+        /* Estilo básico y limpio */
         body { 
             font-family: 'Arial', sans-serif; 
             margin: 0; 
@@ -15,7 +15,6 @@
             color: #333; 
         }
 
-        /* Fondo para el contenedor principal */
         .container {
             width: 80%;
             margin: 0 auto;
@@ -26,16 +25,14 @@
             margin-top: 20px;
         }
 
-        /* Encabezado */
         h1 {
             font-size: 28px;
-            color: #005e9e; /* Color azul UE */
+            color: #005e9e;
             text-align: center;
             margin-bottom: 20px;
             font-weight: bold;
         }
 
-        /* Estilo de los campos de entrada */
         input, select, button {
             margin: 10px 0;
             padding: 10px;
@@ -47,7 +44,7 @@
         }
 
         button {
-            background-color: #005e9e; /* Azul UE */
+            background-color: #005e9e;
             color: white;
             border: none;
             cursor: pointer;
@@ -58,7 +55,6 @@
             background-color: #003e74;
         }
 
-        /* Estilo para los resultados */
         .proyecto {
             border: 1px solid #ddd;
             padding: 15px;
@@ -67,18 +63,6 @@
             background: #f9f9f9;
         }
 
-        .proyecto b {
-            color: #005e9e;
-        }
-
-        /* Barra de gráficos */
-        canvas {
-            width: 100%;
-            max-width: 800px;
-            margin: 20px auto;
-        }
-
-        /* Estilo de la financiación total */
         .total-financiacion {
             font-size: 20px;
             font-weight: bold;
@@ -87,7 +71,12 @@
             margin-top: 20px;
         }
 
-        /* Fondo de página sutil */
+        canvas {
+            width: 100%;
+            max-width: 800px;
+            margin: 20px auto;
+        }
+
         .background {
             background: url('https://upload.wikimedia.org/wikipedia/commons/7/70/Flag_of_Europe.svg') no-repeat center center fixed;
             background-size: cover;
@@ -101,8 +90,8 @@
     </style>
 </head>
 <body>
-    <div class="background"></div> <!-- Fondo sutil de la bandera de la UE -->
-    
+    <div class="background"></div>
+
     <div class="container">
         <h1>Buscador de Proyectos Europeos</h1>
 
@@ -139,14 +128,21 @@
         let proyectos = [];
         let chart;
 
+        // Cargar los datos de los proyectos
         fetch("europeos.json")
             .then(response => response.json())
             .then(data => {
                 proyectos = data;
+                console.log("Proyectos cargados:", proyectos); // Verificar que los datos se cargan correctamente
                 llenarProgramaDropdown();
                 actualizarGrafico(proyectos);
+            })
+            .catch(error => {
+                console.error("Error al cargar el archivo JSON:", error);
+                alert("Hubo un error al cargar los datos. Revisa la consola para más detalles.");
             });
 
+        // Llenar el dropdown de programas
         function llenarProgramaDropdown() {
             let programas = [...new Set(proyectos.map(p => p.programa).filter(p => p))];
             let select = document.getElementById("programme");
@@ -154,6 +150,7 @@
                 programas.map(p => `<option value="${p}">${p}</option>`).join('');
         }
 
+        // Filtrar los proyectos
         function filtrarProyectos() {
             let acronym = document.getElementById("acronym").value.toLowerCase();
             let title = document.getElementById("title").value.toLowerCase();
@@ -186,6 +183,7 @@
             actualizarGrafico(proyectosFiltrados);
         }
 
+        // Mostrar los resultados de los proyectos
         function mostrarResultados(resultados) {
             let contenedor = document.getElementById("resultados");
             contenedor.innerHTML = "";
@@ -221,6 +219,7 @@
             document.getElementById("totalFinanciacion").innerText = `Total financiación de proyectos filtrados: ${totalFinanciacion.toLocaleString()} €`;
         }
 
+        // Actualizar el gráfico de proyectos
         function actualizarGrafico(proyectos) {
             let categorias = {};
             proyectos.forEach(proyecto => {
@@ -228,7 +227,16 @@
             });
             let ctx = document.getElementById("grafico").getContext("2d");
             if (chart) chart.destroy();
-            chart = new Chart(ctx, { type: "bar", data: { labels: Object.keys(categorias), datasets: [{ label: "Proyectos por Programa", data: Object.values(categorias) }] } });
+            chart = new Chart(ctx, {
+                type: "bar",
+                data: {
+                    labels: Object.keys(categorias),
+                    datasets: [{
+                        label: "Proyectos por Programa",
+                        data: Object.values(categorias)
+                    }]
+                }
+            });
         }
     </script>
 </body>
