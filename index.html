@@ -6,6 +6,7 @@
     <title>Buscador de Proyectos Europeos</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        /* Fondo suave y diseño más limpio */
         body { 
             font-family: 'Arial', sans-serif; 
             margin: 0; 
@@ -13,6 +14,8 @@
             background-color: #f4f7fa; 
             color: #333; 
         }
+
+        /* Fondo para el contenedor principal */
         .container {
             width: 80%;
             margin: 0 auto;
@@ -22,13 +25,17 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             margin-top: 20px;
         }
+
+        /* Encabezado */
         h1 {
             font-size: 28px;
-            color: #005e9e;
+            color: #005e9e; /* Color azul UE */
             text-align: center;
             margin-bottom: 20px;
             font-weight: bold;
         }
+
+        /* Estilo de los campos de entrada */
         input, select, button {
             margin: 10px 0;
             padding: 10px;
@@ -38,16 +45,20 @@
             font-size: 14px;
             box-sizing: border-box;
         }
+
         button {
-            background-color: #005e9e;
+            background-color: #005e9e; /* Azul UE */
             color: white;
             border: none;
             cursor: pointer;
             transition: background-color 0.3s ease;
         }
+
         button:hover {
             background-color: #003e74;
         }
+
+        /* Estilo para los resultados */
         .proyecto {
             border: 1px solid #ddd;
             padding: 15px;
@@ -55,6 +66,19 @@
             border-radius: 5px;
             background: #f9f9f9;
         }
+
+        .proyecto b {
+            color: #005e9e;
+        }
+
+        /* Barra de gráficos */
+        canvas {
+            width: 100%;
+            max-width: 800px;
+            margin: 20px auto;
+        }
+
+        /* Estilo de la financiación total */
         .total-financiacion {
             font-size: 20px;
             font-weight: bold;
@@ -62,46 +86,104 @@
             text-align: center;
             margin-top: 20px;
         }
+
+        /* Fondo de página sutil */
+        .background {
+            background: url('https://upload.wikimedia.org/wikipedia/commons/7/70/Flag_of_Europe.svg') no-repeat center center fixed;
+            background-size: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
     </style>
 </head>
 <body>
+    <div class="background"></div> <!-- Fondo sutil de la bandera de la UE -->
+    
     <div class="container">
         <h1>Buscador de Proyectos Europeos</h1>
 
         <input type="text" id="acronym" placeholder="Buscar por Acrónimo">
         <input type="text" id="title" placeholder="Buscar por Título">
+        <input type="text" id="coordinators" placeholder="Buscar por Coordinadores">
+        <input type="text" id="topic" placeholder="Buscar por Tema">
+        
+        <select id="programme">
+            <option value="">Selecciona un Programa</option>
+        </select>
+        
+        <select id="status">
+            <option value="">Selecciona un Estado</option>
+            <option value="active">Activo</option>
+            <option value="completed">Completado</option>
+            <option value="pending">Pendiente</option>
+        </select>
+
+        <input type="text" id="pillar" placeholder="Buscar por Pilar">
+        <input type="text" id="work_programme" placeholder="Buscar por Programa de Trabajo">
+        <input type="date" id="start_date">
+        <input type="date" id="end_date">
+        <input type="number" id="budget" placeholder="Presupuesto mínimo">
+        <input type="number" id="grant" placeholder="Subvención mínima">
         <button onclick="filtrarProyectos()">Buscar</button>
         
+        <canvas id="grafico"></canvas>
         <div id="resultados"></div>
         <p id="totalFinanciacion" class="total-financiacion"></p>
     </div>
 
     <script>
         let proyectos = [];
-        
-        // Cargar los proyectos del archivo JSON
+        let chart;
+
         fetch("europeos.json")
             .then(response => response.json())
             .then(data => {
                 proyectos = data;
-                console.log("Proyectos cargados:", proyectos); // Verificar que los proyectos se carguen correctamente
-                mostrarResultados(proyectos); // Mostrar todos los proyectos inicialmente
-            })
-            .catch(error => {
-                console.error("Error al cargar el archivo JSON:", error);
-                alert("Hubo un error al cargar los datos. Revisa la consola para más detalles.");
+                llenarProgramaDropdown();
+                actualizarGrafico(proyectos);
             });
+
+        function llenarProgramaDropdown() {
+            let programas = [...new Set(proyectos.map(p => p.programa).filter(p => p))];
+            let select = document.getElementById("programme");
+            select.innerHTML = '<option value="">Todos los Programas</option>' +
+                programas.map(p => `<option value="${p}">${p}</option>`).join('');
+        }
 
         function filtrarProyectos() {
             let acronym = document.getElementById("acronym").value.toLowerCase();
             let title = document.getElementById("title").value.toLowerCase();
-
+            let coordinators = document.getElementById("coordinators").value.toLowerCase();
+            let topic = document.getElementById("topic").value.toLowerCase();
+            let programme = document.getElementById("programme").value;
+            let status = document.getElementById("status").value.toLowerCase();
+            let pillar = document.getElementById("pillar").value.toLowerCase();
+            let work_programme = document.getElementById("work_programme").value.toLowerCase();
+            let start_date = document.getElementById("start_date").value;
+            let end_date = document.getElementById("end_date").value;
+            let budget = document.getElementById("budget").value;
+            let grant = document.getElementById("grant").value;
+            
             let proyectosFiltrados = proyectos.filter(proyecto =>
                 (acronym === "" || proyecto.acronym.toLowerCase().includes(acronym)) &&
-                (title === "" || proyecto.title.toLowerCase().includes(title))
+                (title === "" || proyecto.nombre.toLowerCase().includes(title)) &&
+                (coordinators === "" || proyecto.universidad.toLowerCase().includes(coordinators)) &&
+                (topic === "" || proyecto.topic.toLowerCase().includes(topic)) &&
+                (programme === "" || proyecto.programa === programme) &&
+                (status === "" || proyecto.status.toLowerCase() === status) &&
+                (pillar === "" || proyecto.pillar.toLowerCase().includes(pillar)) &&
+                (work_programme === "" || proyecto.work_programme.toLowerCase().includes(work_programme)) &&
+                (start_date === "" || proyecto.start_date >= start_date) &&
+                (end_date === "" || proyecto.end_date <= end_date) &&
+                (budget === "" || parseFloat(proyecto.budget.replace("€", "").replace(/\./g, "")) >= parseFloat(budget)) &&
+                (grant === "" || parseFloat(proyecto.financiacion.replace("€", "").replace(/\./g, "")) >= parseFloat(grant))
             );
-
             mostrarResultados(proyectosFiltrados);
+            actualizarGrafico(proyectosFiltrados);
         }
 
         function mostrarResultados(resultados) {
@@ -119,23 +201,34 @@
                 let div = document.createElement("div");
                 div.classList.add("proyecto");
 
-                // Aseguramos que cada campo tenga un valor predeterminado si está vacío
                 div.innerHTML = `
-                    <b>${proyecto.title || "No disponible"}</b><br>
-                    Acrónimo: ${proyecto.acronym || "No disponible"}<br>
+                    <b>${proyecto.nombre}</b> (${proyecto.universidad})<br>
                     Coordinador: ${proyecto.coordinators || "No disponible"}<br>
-                    Tema: ${proyecto.topic || "No disponible"}<br>
-                    Subvención: ${proyecto.grant || "No disponible"}<br>
+                    Tema: ${proyecto.topic}<br>
+                    Programa: ${proyecto.programa}<br>
+                    Estado: ${proyecto.status || "No disponible"}<br>
+                    Pilar: ${proyecto.pillar || "No disponible"}<br>
+                    Programa de trabajo: ${proyecto.work_programme || "No disponible"}<br>
+                    Fecha de inicio: ${proyecto.start_date || "No disponible"}<br>
+                    Fecha de fin: ${proyecto.end_date || "No disponible"}<br>
+                    Subvención: ${proyecto.financiacion}<br>
+                    <a href="${proyecto.link}" target="_blank">Más información</a><br>
                 `;
                 contenedor.appendChild(div);
-
-                // Sumamos la financiación total (solo si está disponible)
-                if (proyecto.grant && !isNaN(parseFloat(proyecto.grant.replace("€", "").replace(/\./g, "")))) {
-                    totalFinanciacion += parseFloat(proyecto.grant.replace("€", "").replace(/\./g, ""));
-                }
+                totalFinanciacion += parseFloat(proyecto.financiacion.replace("€", "").replace(/\./g, ""));
             });
 
             document.getElementById("totalFinanciacion").innerText = `Total financiación de proyectos filtrados: ${totalFinanciacion.toLocaleString()} €`;
+        }
+
+        function actualizarGrafico(proyectos) {
+            let categorias = {};
+            proyectos.forEach(proyecto => {
+                categorias[proyecto.programa] = (categorias[proyecto.programa] || 0) + 1;
+            });
+            let ctx = document.getElementById("grafico").getContext("2d");
+            if (chart) chart.destroy();
+            chart = new Chart(ctx, { type: "bar", data: { labels: Object.keys(categorias), datasets: [{ label: "Proyectos por Programa", data: Object.values(categorias) }] } });
         }
     </script>
 </body>
