@@ -14,102 +14,107 @@
 </head>
 <body>
     <h1>Buscador de Proyectos Europeos</h1>
-    
-    <input type="text" id="titulo" placeholder="Buscar por título">
-    <input type="text" id="universidad" placeholder="Buscar por universidad">
-    <input type="text" id="comunidad" placeholder="Buscar por Comunidad Autónoma">
-    <input type="text" id="programa" placeholder="Buscar por programa"> <!-- Nuevo filtro -->
-    <input type="number" id="financiacion" placeholder="Financiación mínima">
+    <input type="text" id="acronym" placeholder="Buscar por Acrónimo">
+    <input type="text" id="title" placeholder="Buscar por Título">
+    <input type="text" id="coordinators" placeholder="Buscar por Coordinadores">
+    <input type="text" id="topic" placeholder="Buscar por Tema">
+    <select id="programme"></select>
+    <input type="text" id="pillar" placeholder="Buscar por Pilar">
+    <input type="text" id="objectives" placeholder="Buscar por Objetivos">
+    <input type="text" id="work_programme" placeholder="Buscar por Programa de Trabajo">
+    <input type="text" id="status" placeholder="Buscar por Estado">
+    <input type="date" id="start_date">
+    <input type="date" id="end_date">
+    <input type="number" id="budget" placeholder="Presupuesto mínimo">
+    <input type="number" id="grant" placeholder="Subvención mínima">
     <button onclick="filtrarProyectos()">Buscar</button>
     
     <canvas id="grafico"></canvas>
     <div id="resultados"></div>
     <p id="totalFinanciacion" class="total-financiacion"></p>
-
+    
     <script>
         let proyectos = [];
         let chart;
 
-        // Cargar proyectos desde el JSON
         fetch("europeos.json")
             .then(response => response.json())
             .then(data => {
                 proyectos = data;
-                actualizarGrafico(proyectos);  // Actualizar la gráfica al cargar
-                mostrarResultados(proyectos);  // Mostrar todos los proyectos por defecto
-            })
-            .catch(error => console.error("Error cargando JSON:", error));
+                llenarProgramaDropdown();
+                actualizarGrafico(proyectos);
+            });
 
-        // Función para filtrar proyectos
+        function llenarProgramaDropdown() {
+            let programas = [...new Set(proyectos.map(p => p.programa).filter(p => p))];
+            let select = document.getElementById("programme");
+            select.innerHTML = '<option value="">Todos los Programas</option>' +
+                programas.map(p => `<option value="${p}">${p}</option>`).join('');
+        }
+
         function filtrarProyectos() {
-            let titulo = document.getElementById("titulo").value.toLowerCase();
-            let universidad = document.getElementById("universidad").value.toLowerCase();
-            let comunidad = document.getElementById("comunidad").value.toLowerCase();
-            let programa = document.getElementById("programa").value.toLowerCase(); // Nuevo filtro
-            let financiacion = document.getElementById("financiacion").value;
-
-            let proyectosFiltrados = proyectos.filter(proyecto => 
-                (titulo === "" || proyecto.nombre.toLowerCase().includes(titulo)) &&
-                (universidad === "" || proyecto.universidad.toLowerCase().includes(universidad)) &&
-                (comunidad === "" || proyecto.comunidad.toLowerCase().includes(comunidad)) &&
-                (programa === "" || proyecto.programa.toLowerCase().includes(programa)) &&  // Nuevo filtro
-                (financiacion === "" || parseFloat(proyecto.financiacion.replace("€", "").replace(/\./g, "")) >= parseFloat(financiacion))
+            let acronym = document.getElementById("acronym").value.toLowerCase();
+            let title = document.getElementById("title").value.toLowerCase();
+            let coordinators = document.getElementById("coordinators").value.toLowerCase();
+            let topic = document.getElementById("topic").value.toLowerCase();
+            let programme = document.getElementById("programme").value;
+            let pillar = document.getElementById("pillar").value.toLowerCase();
+            let objectives = document.getElementById("objectives").value.toLowerCase();
+            let work_programme = document.getElementById("work_programme").value.toLowerCase();
+            let status = document.getElementById("status").value.toLowerCase();
+            let start_date = document.getElementById("start_date").value;
+            let end_date = document.getElementById("end_date").value;
+            let budget = document.getElementById("budget").value;
+            let grant = document.getElementById("grant").value;
+            
+            let proyectosFiltrados = proyectos.filter(proyecto =>
+                (acronym === "" || proyecto.acronym.toLowerCase().includes(acronym)) &&
+                (title === "" || proyecto.nombre.toLowerCase().includes(title)) &&
+                (coordinators === "" || proyecto.universidad.toLowerCase().includes(coordinators)) &&
+                (topic === "" || proyecto.topic.toLowerCase().includes(topic)) &&
+                (programme === "" || proyecto.programa === programme) &&
+                (pillar === "" || proyecto.pillar.toLowerCase().includes(pillar)) &&
+                (objectives === "" || proyecto.objectives.toLowerCase().includes(objectives)) &&
+                (work_programme === "" || proyecto.work_programme.toLowerCase().includes(work_programme)) &&
+                (status === "" || proyecto.status.toLowerCase().includes(status)) &&
+                (start_date === "" || proyecto.start_date >= start_date) &&
+                (end_date === "" || proyecto.end_date <= end_date) &&
+                (budget === "" || parseFloat(proyecto.budget.replace("€", "").replace(/\./g, "")) >= parseFloat(budget)) &&
+                (grant === "" || parseFloat(proyecto.financiacion.replace("€", "").replace(/\./g, "")) >= parseFloat(grant))
             );
-
             mostrarResultados(proyectosFiltrados);
             actualizarGrafico(proyectosFiltrados);
         }
 
-        // Mostrar resultados filtrados
         function mostrarResultados(resultados) {
             let contenedor = document.getElementById("resultados");
             contenedor.innerHTML = "";
-
+            
             if (resultados.length === 0) {
                 contenedor.innerHTML = "<p>No se encontraron resultados</p>";
-                document.getElementById("totalFinanciacion").innerText = "";
                 return;
             }
-
-            let totalFinanciacion = 0;
+            
             resultados.forEach(proyecto => {
                 let div = document.createElement("div");
                 div.classList.add("proyecto");
                 div.innerHTML = `<b>${proyecto.nombre}</b> (${proyecto.universidad})<br>
-                                 Comunidad: ${proyecto.comunidad}<br>
+                                 Tema: ${proyecto.topic}<br>
                                  Programa: ${proyecto.programa}<br>
-                                 Financiación: ${proyecto.financiacion}<br>
-                                 <a href="${proyecto.link}" target="_blank">Ver más</a>`;
+                                 Subvención: ${proyecto.financiacion}<br>
+                                 <a href="${proyecto.link}" target="_blank">Más información</a><br>`;
                 contenedor.appendChild(div);
-                totalFinanciacion += parseFloat(proyecto.financiacion.replace("€", "").replace(/\./g, ""));
             });
-
-            document.getElementById("totalFinanciacion").innerText = `Total financiación: ${totalFinanciacion.toLocaleString()} €`;
         }
 
-        // Función para actualizar la gráfica
         function actualizarGrafico(proyectos) {
-            let universidades = {};
+            let categorias = {};
             proyectos.forEach(proyecto => {
-                let uni = proyecto.universidad;
-                let financiacion = parseFloat(proyecto.financiacion.replace("€", "").replace(/\./g, ""));
-                universidades[uni] = (universidades[uni] || 0) + financiacion;
+                categorias[proyecto.programa] = (categorias[proyecto.programa] || 0) + 1;
             });
-
-            let labels = Object.keys(universidades);
-            let data = Object.values(universidades);
-
-            if (chart) chart.destroy();
-
             let ctx = document.getElementById("grafico").getContext("2d");
-            chart = new Chart(ctx, {
-                type: "bar",
-                data: {
-                    labels: labels,
-                    datasets: [{ label: "Financiación (€)", data: data, backgroundColor: "blue" }]
-                },
-                options: { responsive: true }
-            });
+            if (chart) chart.destroy();
+            chart = new Chart(ctx, { type: "bar", data: { labels: Object.keys(categorias), datasets: [{ label: "Proyectos por Programa", data: Object.values(categorias) }] } });
         }
     </script>
 </body>
