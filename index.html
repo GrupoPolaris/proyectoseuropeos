@@ -6,10 +6,13 @@
     <title>Buscador de Proyectos Europeos</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        input, select, button { margin: 5px; padding: 8px; width: 200px; }
-        .proyecto { border: 1px solid #ddd; padding: 10px; margin-top: 10px; border-radius: 5px; background: #f9f9f9; }
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f3f4f6; }
+        input, select, button { margin: 5px; padding: 8px; width: 200px; border-radius: 5px; border: 1px solid #ccc; }
+        button { background-color: #4CAF50; color: white; cursor: pointer; }
+        button:hover { background-color: #45a049; }
+        .proyecto { border: 1px solid #ddd; padding: 10px; margin-top: 10px; border-radius: 5px; background: #ffffff; }
         .total-financiacion { font-size: 18px; font-weight: bold; margin-top: 10px; }
+        h1 { color: #333; font-size: 24px; }
     </style>
 </head>
 <body>
@@ -18,11 +21,27 @@
     <input type="text" id="title" placeholder="Buscar por Título">
     <input type="text" id="coordinators" placeholder="Buscar por Coordinadores">
     <input type="text" id="topic" placeholder="Buscar por Tema">
-    <select id="programme"></select>
+    
+    <!-- Desplegable para Programa -->
+    <select id="programme">
+        <option value="">Selecciona un Programa</option>
+    </select>
+
+    <!-- Desplegable para Estado -->
+    <select id="status">
+        <option value="">Selecciona un Estado</option>
+        <option value="activo">Activo</option>
+        <option value="completado">Completado</option>
+        <option value="pendiente">Pendiente</option>
+    </select>
+
+    <!-- Desplegable para Objetivos -->
+    <select id="objectives">
+        <option value="">Selecciona un Objetivo</option>
+    </select>
+
     <input type="text" id="pillar" placeholder="Buscar por Pilar">
-    <input type="text" id="objectives" placeholder="Buscar por Objetivos">
     <input type="text" id="work_programme" placeholder="Buscar por Programa de Trabajo">
-    <input type="text" id="status" placeholder="Buscar por Estado">
     <input type="date" id="start_date">
     <input type="date" id="end_date">
     <input type="number" id="budget" placeholder="Presupuesto mínimo">
@@ -42,6 +61,7 @@
             .then(data => {
                 proyectos = data;
                 llenarProgramaDropdown();
+                llenarObjetivosDropdown();
                 actualizarGrafico(proyectos);
             });
 
@@ -52,16 +72,23 @@
                 programas.map(p => `<option value="${p}">${p}</option>`).join('');
         }
 
+        function llenarObjetivosDropdown() {
+            let objetivos = [...new Set(proyectos.map(p => p.objectives).filter(p => p))];
+            let select = document.getElementById("objectives");
+            select.innerHTML = '<option value="">Todos los Objetivos</option>' +
+                objetivos.map(o => `<option value="${o}">${o}</option>`).join('');
+        }
+
         function filtrarProyectos() {
             let acronym = document.getElementById("acronym").value.toLowerCase();
             let title = document.getElementById("title").value.toLowerCase();
             let coordinators = document.getElementById("coordinators").value.toLowerCase();
             let topic = document.getElementById("topic").value.toLowerCase();
             let programme = document.getElementById("programme").value;
-            let pillar = document.getElementById("pillar").value.toLowerCase();
-            let objectives = document.getElementById("objectives").value.toLowerCase();
-            let work_programme = document.getElementById("work_programme").value.toLowerCase();
             let status = document.getElementById("status").value.toLowerCase();
+            let objectives = document.getElementById("objectives").value.toLowerCase();
+            let pillar = document.getElementById("pillar").value.toLowerCase();
+            let work_programme = document.getElementById("work_programme").value.toLowerCase();
             let start_date = document.getElementById("start_date").value;
             let end_date = document.getElementById("end_date").value;
             let budget = document.getElementById("budget").value;
@@ -73,10 +100,10 @@
                 (coordinators === "" || proyecto.universidad.toLowerCase().includes(coordinators)) &&
                 (topic === "" || proyecto.topic.toLowerCase().includes(topic)) &&
                 (programme === "" || proyecto.programa === programme) &&
-                (pillar === "" || proyecto.pillar.toLowerCase().includes(pillar)) &&
-                (objectives === "" || proyecto.objectives.toLowerCase().includes(objectives)) &&
-                (work_programme === "" || proyecto.work_programme.toLowerCase().includes(work_programme)) &&
                 (status === "" || proyecto.status.toLowerCase().includes(status)) &&
+                (objectives === "" || proyecto.objectives.toLowerCase().includes(objectives)) &&
+                (pillar === "" || proyecto.pillar.toLowerCase().includes(pillar)) &&
+                (work_programme === "" || proyecto.work_programme.toLowerCase().includes(work_programme)) &&
                 (start_date === "" || proyecto.start_date >= start_date) &&
                 (end_date === "" || proyecto.end_date <= end_date) &&
                 (budget === "" || parseFloat(proyecto.budget.replace("€", "").replace(/\./g, "")) >= parseFloat(budget)) &&
