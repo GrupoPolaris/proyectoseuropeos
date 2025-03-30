@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buscador de Proyectos Europeos</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        input, select, button { margin: 5px; padding: 8px; width: 250px; }
+        .proyecto { border: 1px solid #ddd; padding: 10px; margin-top: 10px; border-radius: 5px; background: #f9f9f9; }
+        .total-financiacion { font-size: 18px; font-weight: bold; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Buscador de Proyectos Europeos</h1>
+    <input type="text" id="titulo" placeholder="Buscar por título">
+    <input type="text" id="acronimo" placeholder="Buscar por acrónimo">
+    <input type="text" id="coordinador" placeholder="Buscar por coordinador">
+    <input type="text" id="topic" placeholder="Buscar por tema">
+    <select id="status">
+        <option value="">Todos los estados</option>
+        <option value="Ongoing">Ongoing</option>
+        <option value="Finalizado">Finalizado</option>
+    </select>
+    <input type="number" id="presupuesto" placeholder="Presupuesto mínimo">
+    <button onclick="filtrarProyectos()">Buscar</button>
+    
+    <canvas id="grafico"></canvas>
+    <div id="resultados"></div>
+    <p id="totalFinanciacion" class="total-financiacion"></p>
+
+    <script>
+        let proyectos = [];
+        let chart;
+
+        // Cargar proyectos desde el JSON
+        fetch("europeos.json")
+            .then(response => response.json())
+            .then(data => {
+                proyectos = data;
+                actualizarGrafico(proyectos);
+            });
+
+        function filtrarProyectos() {
+            let titulo = document.getElementById("titulo").value.toLowerCase();
+            let acronimo = document.getElementById("acronimo").value.toLowerCase();
+            let coordinador = document.getElementById("coordinador").value.toLowerCase();
+            let topic = document.getElementById("topic").value.toLowerCase();
+            let status = document.getElementById("status").value;
+            let presupuesto = document.getElementById("presupuesto").value;
+
+            let proyectosFiltrados = proyectos.filter(proyecto => 
+                (titulo === "" || proyecto.Title.toLowerCase().includes(titulo)) &&
+                (acronimo === "" || proyecto.Acronym.toLowerCase().includes(acronimo)) &&
+                (coordinador === "" || proyecto.Coordinators.toLowerCase().includes(coordinador)) &&
+                (topic === "" || proyecto.Topic.toLowerCase().includes(topic)) &&
+                (status === "" || proyecto.Status.toLowerCase() === status.toLowerCase()) &&
+                (presupuesto === "" || parseFloat(proyecto.Budget) >= parseFloat(presupuesto))
+            );
+
+            mostrarResultados(proyectosFiltrados);
+            actualizarGrafico(proyectosFiltrados);
+        }
+
+        function mostrarResultados(resultados) {
+            let contenedor = document.getElementById("resultados");
+            contenedor.innerHTML = "";
+
+            if (resultados.length === 0) {
+                contenedor.innerHTML = "<p>No se encontraron resultados</p>";
+                document.getElementById("totalFinanciacion").innerText = "";
+                return;
+            }
+
+            let totalFinanciacion = 0;
+            resultados.forEach(proyecto => {
+                let div = document.createElement("div");
+                div.classList.add("proyecto");
+                div.innerHTML = `<b>${proyecto.Title}</b> (${proyecto.Acronym})<br>
+                                 Coordinador: ${proyecto.Coordinators}<br>
+                                 Tema: ${proyecto.Topic}<br>
+                                 Estado: ${proyecto.Status}<br>
+                                 Presupuesto: ${proyecto.Budget} €<br>
+                                 <a href="${proyecto.Links}" target="_blank">Más información</a><br>`;
+                contenedor.appendChild(div);
+                totalFinanciacion += parseFloat(proyecto.Budget);
+            });
+
+            document.getElementById("totalFinanciacion").innerText = `Total financiación de proyectos filtrados: ${totalFinanciacion.toLocaleString()} €`;
+        }
+
+        function actualizarGrafico(proyectos) {
+            let coordinadores = {};
+            proyectos.forEach(proyecto => {
+                let coord = proyecto.Coordinators;
+                let presupuesto = parseFloat(proyecto.Budget);
+                coordinadores[coord] = (coordinadores[coord] || 0) + presupuesto;
+            });
+
+            let labels = Object.keys(coordinadores);
+            let data = Object.values(coordinadores);
+
+            if (chart) {
+                chart.destroy();
+            }
+
+            let ctx = document.getElementById("grafico").getContext("2d");
+            chart = new Chart(ctx, {
+                type: "bar",
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: "Presupuesto por coordinador (€)",
+                        data: data,
+                        backgroundColor: "rgba(54, 162, 235, 0.5)",
+                        borderColor: "rgba(54, 162, 235, 1)",
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
