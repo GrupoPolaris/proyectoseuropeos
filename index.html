@@ -30,9 +30,9 @@
     <!-- Desplegable para Estado -->
     <select id="status">
         <option value="">Selecciona un Estado</option>
-        <option value="activo">Activo</option>
-        <option value="completado">Completado</option>
-        <option value="pendiente">Pendiente</option>
+        <option value="active">Activo</option>
+        <option value="completed">Completado</option>
+        <option value="pending">Pendiente</option>
     </select>
 
     <!-- Desplegable para Objetivos -->
@@ -73,7 +73,7 @@
         }
 
         function llenarObjetivosDropdown() {
-            let objetivos = [...new Set(proyectos.map(p => p.objectives).filter(p => p))];
+            let objetivos = [...new Set(proyectos.map(p => p.objectives).filter(p => p && p.trim() !== ""))];
             let select = document.getElementById("objectives");
             select.innerHTML = '<option value="">Todos los Objetivos</option>' +
                 objetivos.map(o => `<option value="${o}">${o}</option>`).join('');
@@ -100,7 +100,7 @@
                 (coordinators === "" || proyecto.universidad.toLowerCase().includes(coordinators)) &&
                 (topic === "" || proyecto.topic.toLowerCase().includes(topic)) &&
                 (programme === "" || proyecto.programa === programme) &&
-                (status === "" || proyecto.status.toLowerCase().includes(status)) &&
+                (status === "" || proyecto.status.toLowerCase() === status) &&
                 (objectives === "" || proyecto.objectives.toLowerCase().includes(objectives)) &&
                 (pillar === "" || proyecto.pillar.toLowerCase().includes(pillar)) &&
                 (work_programme === "" || proyecto.work_programme.toLowerCase().includes(work_programme)) &&
