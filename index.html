@@ -200,11 +200,20 @@
             resultados.forEach(proyecto => {
                 let div = document.createElement("div");
                 div.classList.add("proyecto");
-                div.innerHTML = `<b>${proyecto.nombre}</b> (${proyecto.universidad})<br>
-                                 Tema: ${proyecto.topic}<br>
-                                 Programa: ${proyecto.programa}<br>
-                                 Subvención: ${proyecto.financiacion}<br>
-                                 <a href="${proyecto.link}" target="_blank">Más información</a><br>`;
+
+                div.innerHTML = `
+                    <b>${proyecto.nombre}</b> (${proyecto.universidad})<br>
+                    Coordinador: ${proyecto.coordinators || "No disponible"}<br>
+                    Tema: ${proyecto.topic}<br>
+                    Programa: ${proyecto.programa}<br>
+                    Estado: ${proyecto.status || "No disponible"}<br>
+                    Pilar: ${proyecto.pillar || "No disponible"}<br>
+                    Programa de trabajo: ${proyecto.work_programme || "No disponible"}<br>
+                    Fecha de inicio: ${proyecto.start_date || "No disponible"}<br>
+                    Fecha de fin: ${proyecto.end_date || "No disponible"}<br>
+                    Subvención: ${proyecto.financiacion}<br>
+                    <a href="${proyecto.link}" target="_blank">Más información</a><br>
+                `;
                 contenedor.appendChild(div);
                 totalFinanciacion += parseFloat(proyecto.financiacion.replace("€", "").replace(/\./g, ""));
             });
