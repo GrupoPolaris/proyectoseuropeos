@@ -35,11 +35,6 @@
         <option value="pending">Pendiente</option>
     </select>
 
-    <!-- Desplegable para Objetivos -->
-    <select id="objectives">
-        <option value="">Selecciona un Objetivo</option>
-    </select>
-
     <input type="text" id="pillar" placeholder="Buscar por Pilar">
     <input type="text" id="work_programme" placeholder="Buscar por Programa de Trabajo">
     <input type="date" id="start_date">
@@ -61,7 +56,6 @@
             .then(data => {
                 proyectos = data;
                 llenarProgramaDropdown();
-                llenarObjetivosDropdown();
                 actualizarGrafico(proyectos);
             });
 
@@ -72,13 +66,6 @@
                 programas.map(p => `<option value="${p}">${p}</option>`).join('');
         }
 
-        function llenarObjetivosDropdown() {
-            let objetivos = [...new Set(proyectos.map(p => p.objectives).filter(p => p && p.trim() !== ""))];
-            let select = document.getElementById("objectives");
-            select.innerHTML = '<option value="">Todos los Objetivos</option>' +
-                objetivos.map(o => `<option value="${o}">${o}</option>`).join('');
-        }
-
         function filtrarProyectos() {
             let acronym = document.getElementById("acronym").value.toLowerCase();
             let title = document.getElementById("title").value.toLowerCase();
@@ -86,7 +73,6 @@
             let topic = document.getElementById("topic").value.toLowerCase();
             let programme = document.getElementById("programme").value;
             let status = document.getElementById("status").value.toLowerCase();
-            let objectives = document.getElementById("objectives").value.toLowerCase();
             let pillar = document.getElementById("pillar").value.toLowerCase();
             let work_programme = document.getElementById("work_programme").value.toLowerCase();
             let start_date = document.getElementById("start_date").value;
@@ -101,7 +87,6 @@
                 (topic === "" || proyecto.topic.toLowerCase().includes(topic)) &&
                 (programme === "" || proyecto.programa === programme) &&
                 (status === "" || proyecto.status.toLowerCase() === status) &&
-                (objectives === "" || proyecto.objectives.toLowerCase().includes(objectives)) &&
                 (pillar === "" || proyecto.pillar.toLowerCase().includes(pillar)) &&
                 (work_programme === "" || proyecto.work_programme.toLowerCase().includes(work_programme)) &&
                 (start_date === "" || proyecto.start_date >= start_date) &&
@@ -116,12 +101,14 @@
         function mostrarResultados(resultados) {
             let contenedor = document.getElementById("resultados");
             contenedor.innerHTML = "";
-            
+
             if (resultados.length === 0) {
                 contenedor.innerHTML = "<p>No se encontraron resultados</p>";
+                document.getElementById("totalFinanciacion").innerText = "";
                 return;
             }
-            
+
+            let totalFinanciacion = 0;
             resultados.forEach(proyecto => {
                 let div = document.createElement("div");
                 div.classList.add("proyecto");
@@ -131,7 +118,12 @@
                                  Subvención: ${proyecto.financiacion}<br>
                                  <a href="${proyecto.link}" target="_blank">Más información</a><br>`;
                 contenedor.appendChild(div);
+                // Sumar la financiación total
+                totalFinanciacion += parseFloat(proyecto.financiacion.replace("€", "").replace(/\./g, ""));
             });
+
+            // Mostrar el total de financiación
+            document.getElementById("totalFinanciacion").innerText = `Total financiación de proyectos filtrados: ${totalFinanciacion.toLocaleString()} €`;
         }
 
         function actualizarGrafico(proyectos) {
